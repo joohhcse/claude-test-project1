@@ -1,27 +1,22 @@
-// src/components/notification-widget.tsx
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/contexts/notification-context";
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "방금 전";
-  if (minutes < 60) return `${minutes}분 전`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  return `${days}일 전`;
-}
+import { timeAgo } from "@/lib/time-ago";
 
 export function NotificationWidget() {
   const router = useRouter();
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotifications();
 
-  const sorted = [...notifications].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  const sorted = useMemo(
+    () =>
+      [...notifications].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    [notifications],
   );
 
   return (
@@ -65,10 +60,10 @@ export function NotificationWidget() {
                   <p
                     className={`text-sm ${n.isRead ? "text-muted-foreground" : "font-medium"}`}
                   >
-                    {n.title} — {n.message.split(",")[0]}
+                    {n.title}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {n.message.includes(",") ? n.message.split(",").slice(1).join(",").trim() : ""}
+                    {n.message}
                   </p>
                 </div>
               </div>

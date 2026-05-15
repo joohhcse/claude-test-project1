@@ -8,7 +8,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-020, 정하늘, ₩129,000",
     orderId: "ORD-020",
     isRead: false,
-    createdAt: "2025-05-11T10:05:00Z",
+    createdAt: "2026-05-15T08:05:00Z",
   },
   {
     id: "NTF-002",
@@ -17,7 +17,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-005, 정하늘, ₩145,000",
     orderId: "ORD-005",
     isRead: false,
-    createdAt: "2025-05-11T09:50:00Z",
+    createdAt: "2026-05-15T07:50:00Z",
   },
   {
     id: "NTF-003",
@@ -26,7 +26,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-002, 이지은 → 배송중",
     orderId: "ORD-002",
     isRead: false,
-    createdAt: "2025-05-11T09:35:00Z",
+    createdAt: "2026-05-15T07:35:00Z",
   },
   {
     id: "NTF-004",
@@ -35,7 +35,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-017, 송지효, ₩189,000",
     orderId: "ORD-017",
     isRead: false,
-    createdAt: "2025-05-10T16:00:00Z",
+    createdAt: "2026-05-14T16:00:00Z",
   },
   {
     id: "NTF-005",
@@ -44,7 +44,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-001, 김민수 → 배송완료",
     orderId: "ORD-001",
     isRead: true,
-    createdAt: "2025-05-10T14:30:00Z",
+    createdAt: "2026-05-14T14:30:00Z",
   },
   {
     id: "NTF-006",
@@ -53,7 +53,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-014, 한소희, ₩75,000",
     orderId: "ORD-014",
     isRead: true,
-    createdAt: "2025-05-10T12:00:00Z",
+    createdAt: "2026-05-14T12:00:00Z",
   },
   {
     id: "NTF-007",
@@ -62,7 +62,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-008, 강다니엘 → 배송중",
     orderId: "ORD-008",
     isRead: true,
-    createdAt: "2025-05-09T11:20:00Z",
+    createdAt: "2026-05-13T11:20:00Z",
   },
   {
     id: "NTF-008",
@@ -71,7 +71,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-012, 박서준, ₩28,000",
     orderId: "ORD-012",
     isRead: true,
-    createdAt: "2025-05-09T08:30:00Z",
+    createdAt: "2026-05-13T08:30:00Z",
   },
   {
     id: "NTF-009",
@@ -80,16 +80,16 @@ export const mockNotifications: Notification[] = [
     message: "ORD-003, 박서준 → 처리중",
     orderId: "ORD-003",
     isRead: true,
-    createdAt: "2025-05-08T17:00:00Z",
+    createdAt: "2026-05-12T17:00:00Z",
   },
   {
     id: "NTF-010",
     type: "order_cancelled",
     title: "주문이 취소되었습니다",
-    message: "ORD-005, 정하늘, ₩145,000",
-    orderId: "ORD-005",
+    message: "ORD-013, 이지은, ₩42,000",
+    orderId: "ORD-013",
     isRead: true,
-    createdAt: "2025-05-08T13:15:00Z",
+    createdAt: "2026-05-12T13:15:00Z",
   },
   {
     id: "NTF-011",
@@ -98,7 +98,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-009, 송지효, ₩90,000",
     orderId: "ORD-009",
     isRead: true,
-    createdAt: "2025-05-08T10:30:00Z",
+    createdAt: "2026-05-12T10:30:00Z",
   },
   {
     id: "NTF-012",
@@ -107,7 +107,7 @@ export const mockNotifications: Notification[] = [
     message: "ORD-010, 유재석 → 배송완료",
     orderId: "ORD-010",
     isRead: true,
-    createdAt: "2025-05-07T15:45:00Z",
+    createdAt: "2026-05-11T15:45:00Z",
   },
   {
     id: "NTF-013",
@@ -116,6 +116,6 @@ export const mockNotifications: Notification[] = [
     message: "ORD-006, 한소희, ₩118,000",
     orderId: "ORD-006",
     isRead: true,
-    createdAt: "2025-05-07T10:05:00Z",
+    createdAt: "2026-05-11T10:05:00Z",
   },
 ];

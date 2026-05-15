@@ -1,9 +1,9 @@
-// src/components/notification-bell.tsx
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/contexts/notification-context";
+import { timeAgo } from "@/lib/time-ago";
 import type { NotificationType } from "@/domain/types/notification";
 
 const typeIcon: Record<NotificationType, string> = {
@@ -11,17 +11,6 @@ const typeIcon: Record<NotificationType, string> = {
   order_status: "🚚",
   order_cancelled: "❌",
 };
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "방금 전";
-  if (minutes < 60) return `${minutes}분 전`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  return `${days}일 전`;
-}
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,22 +25,38 @@ export function NotificationBell() {
         setIsOpen(false);
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
-  const recent = [...notifications]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+  const recent = useMemo(
+    () =>
+      [...notifications]
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )
+        .slice(0, 5),
+    [notifications],
+  );
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
+        aria-label={`알림${unreadCount > 0 ? ` (읽지 않은 알림 ${unreadCount}건)` : ""}`}
         onClick={() => setIsOpen((prev) => !prev)}
         className="relative rounded-md p-2 text-muted-foreground hover:bg-muted"
       >
         <svg
+          aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
           width="20"
           height="20"
