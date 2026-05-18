@@ -131,9 +131,9 @@ export function ProductForm({ product }: ProductFormProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left: Basic info (2 cols) */}
-        <div className="col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-6">
           {/* Basic info */}
           <section className="rounded-lg border border-border bg-white p-6 space-y-4">
             <h2 className="font-semibold">기본 정보</h2>
@@ -146,7 +146,7 @@ export function ProductForm({ product }: ProductFormProps) {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="카테고리" error={errors.category} required>
                 <select
                   value={category}
@@ -176,7 +176,7 @@ export function ProductForm({ product }: ProductFormProps) {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="가격 (원)" error={errors.price} required>
                 <input
                   type="number"

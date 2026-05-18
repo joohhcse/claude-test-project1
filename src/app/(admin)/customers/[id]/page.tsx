@@ -141,7 +141,7 @@ export default function CustomerDetailPage({
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard label="총 주문 횟수" value={`${customer.totalOrders}건`} />
         <KPICard
           label="총 누적 구매액"

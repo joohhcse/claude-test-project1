@@ -12,7 +12,11 @@ const menuItems = [
   { label: "설정", href: "/settings" },
 ] as const;
 
-export function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -27,6 +31,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => onNavigate?.()}
               className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-primary text-primary-foreground"

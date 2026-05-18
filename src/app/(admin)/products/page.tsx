@@ -168,7 +168,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchFilter
           value={search}
           onChange={(v) => {
@@ -220,7 +220,7 @@ export default function ProductsPage() {
 
       {/* Selection Bar */}
       {selected.size > 0 && (
-        <div className="fixed bottom-0 left-60 right-0 border-t border-border bg-white px-6 py-3 flex items-center justify-between shadow-lg">
+        <div className="fixed bottom-0 left-0 md:left-60 right-0 border-t border-border bg-white px-4 md:px-6 py-3 flex items-center justify-between shadow-lg">
           <span className="text-sm font-medium">
             {selected.size}개 상품 선택됨
           </span>

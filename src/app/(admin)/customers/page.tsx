@@ -95,7 +95,7 @@ export default function CustomersPage() {
       <h1 className="text-2xl font-bold">고객 관리</h1>
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchFilter
           value={search}
           onChange={setSearch}
@@ -157,7 +157,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-lg border border-border bg-white p-4 text-center">
           <p className="text-sm text-muted-foreground">전체 고객 수</p>
           <p className="mt-1 text-2xl font-bold">{totalCount}명</p>

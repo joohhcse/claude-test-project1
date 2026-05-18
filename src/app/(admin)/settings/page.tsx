@@ -38,7 +38,7 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold">설정</h1>
 
       {/* Horizontal tab menu */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex flex-wrap gap-1 border-b border-border">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -269,7 +269,7 @@ function TeamTab() {
 
         {/* Add form */}
         {showAddForm && (
-          <div className="mb-4 flex items-end gap-3 rounded-md border border-border bg-muted/30 p-4">
+          <div className="mb-4 flex flex-col gap-3 rounded-md border border-border bg-muted/30 p-4 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-1">
               <label className="text-xs font-medium">이름</label>
               <input
@@ -290,7 +290,7 @@ function TeamTab() {
                 className="w-full rounded-md border border-border px-3 py-1.5 text-sm outline-none focus:border-primary"
               />
             </div>
-            <div className="w-32 space-y-1">
+            <div className="w-full sm:w-32 space-y-1">
               <label className="text-xs font-medium">권한</label>
               <select
                 value={newRole}

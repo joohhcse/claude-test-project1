@@ -52,8 +52,8 @@ export default function AnalyticsPage() {
       <h1 className="text-2xl font-bold">분석</h1>
 
       {/* Period filter + Export */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           {(Object.keys(periodLabel) as Period[]).map((p) => (
             <button
               key={p}
@@ -102,7 +102,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard label="매출" value={analyticsKpi.revenue} />
         <KPICard label="주문수" value={analyticsKpi.orders} />
         <KPICard label="객단가" value={analyticsKpi.avgOrderValue} />
@@ -110,9 +110,9 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Main chart + Side */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Daily sales line chart (2 cols) */}
-        <div className="col-span-2 rounded-lg border border-border bg-white p-6">
+        <div className="md:col-span-2 rounded-lg border border-border bg-white p-6">
           <h2 className="mb-4 font-semibold">일별 매출 추이</h2>
           <DailySalesChart data={chartData} />
         </div>

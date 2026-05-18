@@ -41,7 +41,7 @@ export default function DevPage() {
       {/* KPICard */}
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">KPICard</h2>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <KPICard label="총 매출" value="₩12,450,000" change="+12.5% 전월 대비" trend="up" />
           <KPICard label="주문 수" value="384건" change="-3.2% 전월 대비" trend="down" />
           <KPICard label="신규 고객" value="48명" change="+8명 전월 대비" trend="up" />

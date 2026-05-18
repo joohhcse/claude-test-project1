@@ -81,7 +81,7 @@ export default function OrderDetailPage({
 
       {/* Stepper */}
       {!isCancelled && (
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-white p-6">
+        <div className="flex flex-col gap-4 rounded-lg border border-border bg-white p-4 sm:flex-row sm:items-center sm:gap-2 sm:p-6">
           {STEPS.map((step, i) => {
             const done = i <= stepIndex;
             const active = i === stepIndex;
@@ -105,7 +105,7 @@ export default function OrderDetailPage({
                 </div>
                 {i < STEPS.length - 1 && (
                   <div
-                    className={`h-0.5 flex-1 ${i < stepIndex ? "bg-primary" : "bg-border"}`}
+                    className={`hidden sm:block h-0.5 flex-1 ${i < stepIndex ? "bg-primary" : "bg-border"}`}
                   />
                 )}
               </div>
@@ -115,7 +115,7 @@ export default function OrderDetailPage({
       )}
 
       {/* 3-card layout */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Order info */}
         <div className="rounded-lg border border-border bg-white p-6 space-y-3">
           <h2 className="font-semibold">주문 정보</h2>

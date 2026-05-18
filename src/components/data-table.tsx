@@ -19,7 +19,7 @@ export function DataTable<T>({ columns, data }: DataTableProps<T>) {
             {columns.map((col, i) => (
               <th
                 key={i}
-                className="px-4 py-3 font-medium text-muted-foreground"
+                className="px-2 py-2 md:px-4 md:py-3 font-medium text-muted-foreground"
               >
                 {col.header}
               </th>
@@ -30,7 +30,7 @@ export function DataTable<T>({ columns, data }: DataTableProps<T>) {
           {data.map((row, i) => (
             <tr key={i} className="border-b border-border last:border-b-0">
               {columns.map((col, j) => (
-                <td key={j} className="px-4 py-3">
+                <td key={j} className="px-2 py-2 md:px-4 md:py-3">
                   {col.cell(row)}
                 </td>
               ))}

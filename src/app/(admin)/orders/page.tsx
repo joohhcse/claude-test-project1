@@ -105,7 +105,7 @@ export default function OrdersPage() {
       <h1 className="text-2xl font-bold">주문 관리</h1>
 
       {/* Status Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex flex-wrap gap-1 border-b border-border">
         {STATUS_TABS.map((t) => (
           <button
             key={t.value}
@@ -122,7 +122,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchFilter
           value={search}
           onChange={setSearch}

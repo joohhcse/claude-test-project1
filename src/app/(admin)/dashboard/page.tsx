@@ -56,14 +56,14 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold">대시보드</h1>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {kpiData.map((kpi) => (
           <KPICard key={kpi.label} {...kpi} />
         ))}
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <MonthlySalesChart data={monthlySalesData} />
         <CategorySalesChart data={categorySalesData} />
       </div>
