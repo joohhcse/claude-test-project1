@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { Pagination } from "@/components/pagination";
 import { SearchFilter } from "@/components/search-filter";
-import { mockProducts, CATEGORIES } from "@/lib/mock/products";
+import { CATEGORIES } from "@/lib/mock/products";
+import { getProducts, deleteProduct } from "@/lib/api";
+import { useApi } from "@/hooks/use-api";
 import type { Product, ProductStatus } from "@/domain/types/product";
 
 const PAGE_SIZE = 8;
@@ -30,28 +32,59 @@ type StockFilter = "all" | "low" | "out";
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const filtered = useMemo(() => {
-    return mockProducts.filter((p) => {
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase()))
-        return false;
-      if (categoryFilter && p.category !== categoryFilter) return false;
-      if (stockFilter === "low" && p.stock >= 10) return false;
-      if (stockFilter === "out" && p.stock !== 0) return false;
-      return true;
-    });
-  }, [search, categoryFilter, stockFilter]);
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pageData = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+  const apiSize = stockFilter === "all" ? PAGE_SIZE : 100;
+  const apiPage = stockFilter === "all" ? page - 1 : 0;
+
+  const { data, isLoading, error, refetch } = useApi(
+    () =>
+      getProducts({
+        page: apiPage,
+        size: apiSize,
+        search: debouncedSearch || undefined,
+        category: categoryFilter || undefined,
+        sort: "createdAt",
+        direction: "desc",
+      }),
+    [apiPage, apiSize, debouncedSearch, categoryFilter],
   );
+
+  const filteredContent = useMemo(() => {
+    if (!data) return [];
+    if (stockFilter === "all") return data.content;
+    if (stockFilter === "low")
+      return data.content.filter((p) => p.stock > 0 && p.stock < 10);
+    return data.content.filter((p) => p.stock === 0);
+  }, [data, stockFilter]);
+
+  const totalPages =
+    stockFilter === "all"
+      ? (data?.totalPages ?? 1)
+      : Math.max(1, Math.ceil(filteredContent.length / PAGE_SIZE));
+
+  const currentPage = Math.min(page, totalPages);
+
+  const pageData =
+    stockFilter === "all"
+      ? filteredContent
+      : filteredContent.slice(
+          (currentPage - 1) * PAGE_SIZE,
+          currentPage * PAGE_SIZE,
+        );
 
   const allOnPageSelected =
     pageData.length > 0 && pageData.every((p) => selected.has(p.id));
@@ -71,6 +104,16 @@ export default function ProductsPage() {
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setSelected(next);
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    try {
+      await deleteProduct(id);
+      refetch();
+    } catch {
+      alert("삭제에 실패했습니다.");
+    }
   }
 
   const columns = [
@@ -148,7 +191,12 @@ export default function ProductsPage() {
           >
             수정
           </Link>
-          <button className="text-sm text-red-600 hover:underline">삭제</button>
+          <button
+            onClick={() => handleDelete(row.id)}
+            className="text-sm text-red-600 hover:underline"
+          >
+            삭제
+          </button>
         </div>
       ),
     },
@@ -207,7 +255,17 @@ export default function ProductsPage() {
       </div>
 
       {/* Table */}
-      <DataTable columns={columns} data={pageData} />
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">
+          {error}
+        </div>
+      ) : (
+        <DataTable columns={columns} data={pageData} />
+      )}
 
       {/* Pagination */}
       <div className="flex justify-center">

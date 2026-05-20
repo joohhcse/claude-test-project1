@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SearchFilter } from "@/components/search-filter";
-import { mockCustomers } from "@/lib/mock/customers";
+import { Pagination } from "@/components/pagination";
+import { getCustomers } from "@/lib/api";
+import { useApi } from "@/hooks/use-api";
 import type { Customer } from "@/domain/types/customer";
 
 type SortKey = "joinedAt" | "totalSpent";
 type SortDir = "asc" | "desc";
+
+const PAGE_SIZE = 10;
 
 const gradeLabel: Record<string, string> = {
   vvip: "VVIP",
@@ -18,34 +22,38 @@ const gradeLabel: Record<string, string> = {
 export default function CustomersPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("joinedAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [page, setPage] = useState(1);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const sorted = useMemo(() => {
-    let list = mockCustomers.filter(
-      (c) =>
-        !search ||
-        c.name.includes(search) ||
-        c.email.toLowerCase().includes(search.toLowerCase()),
-    );
-    list = [...list].sort((a, b) => {
-      const va = sortKey === "joinedAt" ? a.joinedAt : a.totalSpent;
-      const vb = sortKey === "joinedAt" ? b.joinedAt : b.totalSpent;
-      if (va < vb) return sortDir === "asc" ? -1 : 1;
-      if (va > vb) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    return list;
-  }, [search, sortKey, sortDir]);
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [search]);
 
-  const totalCount = mockCustomers.length;
-  const newThisMonth = mockCustomers.filter((c) =>
-    c.joinedAt.startsWith("2025-05"),
-  ).length;
-  const vipCount = mockCustomers.filter(
-    (c) => c.grade === "vip" || c.grade === "vvip",
-  ).length;
-  const vipPercent = Math.round((vipCount / totalCount) * 100);
+  const { data, isLoading, error } = useApi(
+    () =>
+      getCustomers({
+        page: page - 1,
+        size: PAGE_SIZE,
+        sort: sortKey,
+        direction: sortDir,
+        search: debouncedSearch || undefined,
+      }),
+    [page, sortKey, sortDir, debouncedSearch],
+  );
+
+  const customers = data?.content ?? [];
+  const totalPages = data?.totalPages ?? 1;
+  const totalElements = data?.totalElements ?? 0;
 
   const columns = [
     {
@@ -88,6 +96,7 @@ export default function CustomersPage() {
       setSortKey(key);
       setSortDir("desc");
     }
+    setPage(1);
   }
 
   return (
@@ -123,57 +132,77 @@ export default function CustomersPage() {
         </button>
       </div>
 
+      {/* Loading / Error */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      )}
+      {error && (
+        <div className="py-12 text-center text-muted-foreground">
+          데이터를 불러올 수 없습니다.
+        </div>
+      )}
+
       {/* Table — clickable rows */}
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted text-left">
-              {columns.map((col, i) => (
-                <th
-                  key={i}
-                  className="px-4 py-3 font-medium text-muted-foreground"
-                >
-                  {col.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((row) => (
-              <tr
-                key={row.id}
-                onClick={() => router.push(`/customers/${row.id}`)}
-                className="cursor-pointer border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
-              >
-                {columns.map((col, j) => (
-                  <td key={j} className="px-4 py-3">
-                    {col.cell(row)}
-                  </td>
+      {!isLoading && !error && (
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted text-left">
+                {columns.map((col, i) => (
+                  <th
+                    key={i}
+                    className="px-4 py-3 font-medium text-muted-foreground"
+                  >
+                    {col.header}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {customers.map((row) => (
+                <tr
+                  key={row.id}
+                  onClick={() => router.push(`/customers/${row.id}`)}
+                  className="cursor-pointer border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
+                >
+                  {columns.map((col, j) => (
+                    <td key={j} className="px-4 py-3">
+                      {col.cell(row)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-lg border border-border bg-white p-4 text-center">
           <p className="text-sm text-muted-foreground">전체 고객 수</p>
-          <p className="mt-1 text-2xl font-bold">{totalCount}명</p>
+          <p className="mt-1 text-2xl font-bold">{totalElements}명</p>
         </div>
         <div className="rounded-lg border border-border bg-white p-4 text-center">
-          <p className="text-sm text-muted-foreground">이달의 신규 고객</p>
-          <p className="mt-1 text-2xl font-bold">{newThisMonth}명</p>
+          <p className="text-sm text-muted-foreground">현재 페이지</p>
+          <p className="mt-1 text-2xl font-bold">{page} / {totalPages}</p>
         </div>
         <div className="rounded-lg border border-border bg-white p-4 text-center">
-          <p className="text-sm text-muted-foreground">VIP 비중</p>
-          <p className="mt-1 text-2xl font-bold">
-            {vipPercent}%{" "}
-            <span className="text-sm font-normal text-muted-foreground">
-              ({vipCount}명)
-            </span>
-          </p>
+          <p className="text-sm text-muted-foreground">표시 항목</p>
+          <p className="mt-1 text-2xl font-bold">{customers.length}명</p>
         </div>
       </div>
     </div>

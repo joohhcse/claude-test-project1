@@ -2,7 +2,8 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import { mockOrders } from "@/lib/mock/orders";
+import { getOrder, updateOrderStatus } from "@/lib/api";
+import { useApi } from "@/hooks/use-api";
 import { StatusBadge } from "@/components/status-badge";
 import type { OrderStatus } from "@/domain/types/order";
 
@@ -43,13 +44,25 @@ export default function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const order = mockOrders.find((o) => o.id === id);
-  const [tracking, setTracking] = useState(order?.trackingNumber ?? "");
-  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(
-    order?.status ?? "pending",
+  const { data: order, isLoading, error, refetch } = useApi(
+    () => getOrder(id),
+    [id],
   );
+  const [tracking, setTracking] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  if (!order) {
+  // Sync tracking input when order loads
+  const trackingValue = tracking || order?.trackingNumber || "";
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error || !order) {
     return (
       <div className="py-12 text-center text-muted-foreground">
         주문을 찾을 수 없습니다.
@@ -57,8 +70,38 @@ export default function OrderDetailPage({
     );
   }
 
-  const stepIndex = getStepIndex(currentStatus);
-  const isCancelled = currentStatus === "cancelled";
+  const stepIndex = getStepIndex(order.status);
+  const isCancelled = order.status === "cancelled";
+
+  async function handleAdvanceStatus() {
+    const next = STEPS[stepIndex + 1];
+    if (!next) return;
+    setSaving(true);
+    try {
+      await updateOrderStatus(id, {
+        status: next.key,
+        trackingNumber: trackingValue || undefined,
+      });
+      await refetch();
+    } catch {
+      alert("상태 변경에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleCancel() {
+    if (!confirm("정말 주문을 취소하시겠습니까?")) return;
+    setSaving(true);
+    try {
+      await updateOrderStatus(id, { status: "cancelled" });
+      await refetch();
+    } catch {
+      alert("주문 취소에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -71,10 +114,10 @@ export default function OrderDetailPage({
           >
             ← 주문 목록
           </Link>
-          <h1 className="text-2xl font-bold">{order.id}</h1>
+          <h1 className="text-2xl font-bold">{order.id.slice(0, 8)}...</h1>
           <StatusBadge
-            label={statusLabel[currentStatus]}
-            variant={statusVariant[currentStatus]}
+            label={statusLabel[order.status]}
+            variant={statusVariant[order.status]}
           />
         </div>
       </div>
@@ -152,7 +195,7 @@ export default function OrderDetailPage({
               <dd className="mt-0.5">
                 <input
                   type="text"
-                  value={tracking}
+                  value={trackingValue}
                   onChange={(e) => setTracking(e.target.value)}
                   placeholder="운송장 번호 입력"
                   className="w-full rounded-md border border-border px-2 py-1.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -212,23 +255,19 @@ export default function OrderDetailPage({
       <div className="flex justify-end gap-3">
         <button
           type="button"
-          onClick={() => setCurrentStatus("cancelled")}
-          disabled={isCancelled}
+          onClick={handleCancel}
+          disabled={isCancelled || saving}
           className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
         >
           주문 취소
         </button>
         <button
           type="button"
-          onClick={() => {
-            // Mock: advance to next status
-            const next = STEPS[stepIndex + 1];
-            if (next) setCurrentStatus(next.key);
-          }}
-          disabled={isCancelled || stepIndex >= STEPS.length - 1}
+          onClick={handleAdvanceStatus}
+          disabled={isCancelled || stepIndex >= STEPS.length - 1 || saving}
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-blue-700 disabled:opacity-40 transition-colors"
         >
-          상태 변경 저장
+          {saving ? "저장 중..." : "상태 변경 저장"}
         </button>
       </div>
     </div>

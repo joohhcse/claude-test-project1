@@ -1,9 +1,9 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo } from "react";
 import Link from "next/link";
-import { mockCustomers } from "@/lib/mock/customers";
-import { mockOrders } from "@/lib/mock/orders";
+import { getCustomer, getOrders, getProducts } from "@/lib/api";
+import { useApi } from "@/hooks/use-api";
 import { KPICard } from "@/components/kpi-card";
 import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
@@ -41,37 +41,75 @@ export default function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const customer = mockCustomers.find((c) => c.id === id);
 
-  if (!customer) {
+  const { data: customer, isLoading: customerLoading, error: customerError } = useApi(
+    () => getCustomer(id),
+    [id],
+  );
+
+  const { data: ordersData } = useApi(
+    () => getOrders({ search: customer?.name, size: 100 }),
+    [customer?.name],
+  );
+
+  const { data: productsData } = useApi(
+    () => getProducts({ size: 100 }),
+    [],
+  );
+
+  // Filter orders belonging to this customer
+  const customerOrders = useMemo(() => {
+    if (!ordersData?.content) return [];
+    return ordersData.content.filter((o) => o.customerId === id);
+  }, [ordersData, id]);
+
+  const avgOrderAmount = useMemo(() => {
+    if (customerOrders.length === 0) return 0;
+    return Math.round(
+      customerOrders.reduce((s, o) => s + o.totalAmount, 0) / customerOrders.length,
+    );
+  }, [customerOrders]);
+
+  // Build productId → category map from products API
+  const productCategoryMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (productsData?.content) {
+      for (const p of productsData.content) {
+        map[p.id] = p.category;
+      }
+    }
+    return map;
+  }, [productsData]);
+
+  // Category distribution from order items
+  const categoryData = useMemo(() => {
+    const categoryCount: Record<string, number> = {};
+    customerOrders.forEach((o) =>
+      o.items.forEach((item) => {
+        const cat = productCategoryMap[item.productId] ?? "기타";
+        categoryCount[cat] = (categoryCount[cat] || 0) + item.quantity;
+      }),
+    );
+    return Object.entries(categoryCount)
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [customerOrders, productCategoryMap]);
+
+  if (customerLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (customerError || !customer) {
     return (
       <div className="py-12 text-center text-muted-foreground">
         고객을 찾을 수 없습니다.
       </div>
     );
   }
-
-  const customerOrders = mockOrders.filter((o) => o.customerId === id);
-  const avgOrderAmount =
-    customerOrders.length > 0
-      ? Math.round(
-          customerOrders.reduce((s, o) => s + o.totalAmount, 0) /
-            customerOrders.length,
-        )
-      : 0;
-
-  // Category distribution from order items
-  const categoryCount: Record<string, number> = {};
-  customerOrders.forEach((o) =>
-    o.items.forEach((item) => {
-      // Derive category from product name patterns (simplified mock logic)
-      const cat = getCategoryFromProduct(item.productId);
-      categoryCount[cat] = (categoryCount[cat] || 0) + item.quantity;
-    }),
-  );
-  const categoryData = Object.entries(categoryCount)
-    .map(([category, count]) => ({ category, count }))
-    .sort((a, b) => b.count - a.count);
 
   const orderColumns = [
     {
@@ -81,16 +119,18 @@ export default function CustomerDetailPage({
           href={`/orders/${row.id}`}
           className="text-primary hover:underline"
         >
-          {row.id}
+          {row.id.slice(0, 8)}...
         </Link>
       ),
     },
     {
       header: "상품",
-      cell: (row: Order) =>
-        row.items.length === 1
+      cell: (row: Order) => {
+        if (!row.items || row.items.length === 0) return "-";
+        return row.items.length === 1
           ? row.items[0].name
-          : `${row.items[0].name} 외 ${row.items.length - 1}건`,
+          : `${row.items[0].name} 외 ${row.items.length - 1}건`;
+      },
     },
     {
       header: "금액",
@@ -168,29 +208,4 @@ export default function CustomerDetailPage({
       {categoryData.length > 0 && <CategoryChart data={categoryData} />}
     </div>
   );
-}
-
-/** Simplified mock: map productId prefix to category */
-function getCategoryFromProduct(productId: string): string {
-  const map: Record<string, string> = {
-    P001: "의류",
-    P005: "의류",
-    P008: "의류",
-    P011: "의류",
-    P015: "의류",
-    P002: "전자기기",
-    P006: "전자기기",
-    P009: "전자기기",
-    P012: "전자기기",
-    P016: "전자기기",
-    P003: "식품",
-    P007: "식품",
-    P013: "식품",
-    P017: "식품",
-    P004: "생활용품",
-    P010: "생활용품",
-    P014: "생활용품",
-    P018: "생활용품",
-  };
-  return map[productId] ?? "기타";
 }

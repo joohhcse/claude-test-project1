@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { SearchFilter } from "@/components/search-filter";
-import { mockOrders } from "@/lib/mock/orders";
+import { Pagination } from "@/components/pagination";
+import { getOrders } from "@/lib/api";
+import { useApi } from "@/hooks/use-api";
 import type { Order, OrderStatus } from "@/domain/types/order";
 
 const STATUS_TABS: { label: string; value: OrderStatus | "all" }[] = [
@@ -35,30 +37,72 @@ const statusVariant: Record<
   cancelled: "error",
 };
 
+const PAGE_SIZE = 10;
+
 export default function OrdersPage() {
   const [tab, setTab] = useState<OrderStatus | "all">("all");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(1);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [search]);
+
+  const { data, isLoading, error } = useApi(
+    () =>
+      getOrders({
+        page: page - 1,
+        size: PAGE_SIZE,
+        sort: "orderedAt",
+        direction: "desc",
+        status: tab === "all" ? undefined : tab,
+        search: debouncedSearch || undefined,
+      }),
+    [page, tab, debouncedSearch],
+  );
+
+  // Pending counts for summary bar
+  const { data: pendingData } = useApi(
+    () => getOrders({ status: "pending", size: 1 }),
+    [],
+  );
+  const { data: processingData } = useApi(
+    () => getOrders({ status: "processing", size: 1 }),
+    [],
+  );
+
+  // Client-side date filtering (API doesn't support date range params)
   const filtered = useMemo(() => {
-    return mockOrders.filter((o) => {
-      if (tab !== "all" && o.status !== tab) return false;
-      if (
-        search &&
-        !o.id.toLowerCase().includes(search.toLowerCase()) &&
-        !o.customerName.includes(search)
-      )
-        return false;
+    if (!data?.content) return [];
+    if (!dateFrom && !dateTo) return data.content;
+    return data.content.filter((o) => {
       if (dateFrom && o.orderedAt < dateFrom) return false;
       if (dateTo && o.orderedAt > dateTo + "T23:59:59Z") return false;
       return true;
     });
-  }, [tab, search, dateFrom, dateTo]);
+  }, [data, dateFrom, dateTo]);
 
-  const pendingCount = mockOrders.filter(
-    (o) => o.status === "pending" || o.status === "processing",
-  ).length;
+  const totalPages = data?.totalPages ?? 1;
+
+  const pendingCount = (pendingData?.totalElements ?? 0) + (processingData?.totalElements ?? 0);
+  const pendingOnly = pendingData?.totalElements ?? 0;
+  const processingOnly = processingData?.totalElements ?? 0;
+
+  function handleTabChange(value: OrderStatus | "all") {
+    setTab(value);
+    setPage(1);
+  }
 
   const columns = [
     {
@@ -68,17 +112,19 @@ export default function OrdersPage() {
           href={`/orders/${row.id}`}
           className="font-medium text-primary hover:underline"
         >
-          {row.id}
+          {row.id.slice(0, 8)}...
         </Link>
       ),
     },
     { header: "고객명", cell: (row: Order) => row.customerName },
     {
       header: "상품",
-      cell: (row: Order) =>
-        row.items.length === 1
+      cell: (row: Order) => {
+        if (!row.items || row.items.length === 0) return "-";
+        return row.items.length === 1
           ? row.items[0].name
-          : `${row.items[0].name} 외 ${row.items.length - 1}건`,
+          : `${row.items[0].name} 외 ${row.items.length - 1}건`;
+      },
     },
     {
       header: "금액",
@@ -109,7 +155,7 @@ export default function OrdersPage() {
         {STATUS_TABS.map((t) => (
           <button
             key={t.value}
-            onClick={() => setTab(t.value)}
+            onClick={() => handleTabChange(t.value)}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               tab === t.value
                 ? "border-b-2 border-primary text-primary"
@@ -143,8 +189,31 @@ export default function OrdersPage() {
         />
       </div>
 
+      {/* Loading / Error */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      )}
+      {error && (
+        <div className="py-12 text-center text-muted-foreground">
+          데이터를 불러올 수 없습니다.
+        </div>
+      )}
+
       {/* Table */}
-      <DataTable columns={columns} data={filtered} />
+      {!isLoading && !error && <DataTable columns={columns} data={filtered} />}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
 
       {/* Pending summary bar */}
       <div className="rounded-lg border border-border bg-blue-50 px-4 py-3 text-sm">
@@ -152,9 +221,7 @@ export default function OrdersPage() {
         <span className="font-bold">{pendingCount}건</span>
         <span className="text-muted-foreground">
           {" "}
-          (대기 {mockOrders.filter((o) => o.status === "pending").length}건 +
-          처리중{" "}
-          {mockOrders.filter((o) => o.status === "processing").length}건)
+          (대기 {pendingOnly}건 + 처리중 {processingOnly}건)
         </span>
       </div>
     </div>

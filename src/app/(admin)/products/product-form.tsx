@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import type { Product } from "@/domain/types/product";
 import { CATEGORIES } from "@/lib/mock/products";
+import { createProduct, updateProduct } from "@/lib/api";
 
 const productSchema = z.object({
   name: z.string().min(1, "상품명을 입력해주세요"),
@@ -39,10 +40,11 @@ export function ProductForm({ product }: ProductFormProps) {
       : [],
   );
   const [errors, setErrors] = useState<FormErrors>({});
+  const [saving, setSaving] = useState(false);
   const [aiLoading, setAiLoading] = useState<"desc" | "seo" | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
-  function handleSave() {
+  async function handleSave() {
     const result = productSchema.safeParse({
       name,
       category,
@@ -63,8 +65,28 @@ export function ProductForm({ product }: ProductFormProps) {
     }
 
     setErrors({});
-    // Mock save — just go back
-    router.push("/products");
+    setSaving(true);
+    try {
+      const body = {
+        name,
+        category,
+        price: Number(price),
+        stock: Number(stock),
+        status,
+        image: images[0] ?? "",
+        description,
+      };
+      if (product) {
+        await updateProduct(product.id, body);
+      } else {
+        await createProduct(body);
+      }
+      router.push("/products");
+    } catch {
+      alert("저장에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleFiles(files: FileList | null) {
@@ -124,9 +146,10 @@ export function ProductForm({ product }: ProductFormProps) {
           <button
             type="button"
             onClick={handleSave}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-blue-700 transition-colors"
+            disabled={saving}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            저장
+            {saving ? "저장 중..." : "저장"}
           </button>
         </div>
       </div>

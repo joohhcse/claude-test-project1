@@ -4,12 +4,12 @@ import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { NotificationWidget } from "@/components/notification-widget";
 import {
-  kpiData,
   monthlySalesData,
   categorySalesData,
-  recentOrders,
 } from "@/lib/mock/dashboard";
+import { getAnalyticsKpi, getOrders } from "@/lib/api";
 import { MonthlySalesChart, CategorySalesChart } from "./dashboard-charts";
+import { CorsTest } from "./cors-test";
 import type { Order, OrderStatus } from "@/domain/types/order";
 
 const statusLabel: Record<OrderStatus, string> = {
@@ -50,7 +50,34 @@ const orderColumns = [
   },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  let kpiData: { label: string; value: string; change?: string; trend?: "up" | "down" | "neutral" }[] = [];
+  let recentOrders: Order[] = [];
+
+  try {
+    const [kpiRes, ordersRes] = await Promise.all([
+      getAnalyticsKpi({ period: "2025-05" }),
+      getOrders({ page: 0, size: 5, sort: "orderedAt", direction: "desc" }),
+    ]);
+
+    kpiData = [
+      { label: "총 매출", value: `₩${kpiRes.revenue.toLocaleString()}`, change: "+12.5% 전월 대비", trend: "up" },
+      { label: "주문 수", value: `${kpiRes.orders}건`, change: "-3.2% 전월 대비", trend: "down" },
+      { label: "신규 고객", value: "48명", change: "+8명 전월 대비", trend: "up" },
+      { label: "평균 주문액", value: `₩${kpiRes.avgOrderValue.toLocaleString()}`, change: "+5.1% 전월 대비", trend: "up" },
+    ];
+
+    recentOrders = ordersRes.content;
+  } catch {
+    // API 실패 시 빈 데이터로 렌더링
+    kpiData = [
+      { label: "총 매출", value: "-" },
+      { label: "주문 수", value: "-" },
+      { label: "신규 고객", value: "-" },
+      { label: "평균 주문액", value: "-" },
+    ];
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">대시보드</h1>
@@ -84,6 +111,9 @@ export default function DashboardPage() {
         </div>
         <DataTable columns={orderColumns} data={recentOrders} />
       </div>
+
+      {/* CORS Test */}
+      <CorsTest />
     </div>
   );
 }
