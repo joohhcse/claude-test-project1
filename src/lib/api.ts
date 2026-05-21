@@ -4,7 +4,9 @@ import type { Order } from "@/domain/types/order";
 import type { Notification } from "@/domain/types/notification";
 import type { PaginatedResponse, UnreadCountResponse } from "@/domain/types/api";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+// rewrites(next.config.ts)가 /api/* 요청을 백엔드로 프록시하므로
+// 브라우저는 동일 오리진(빈 문자열)으로 요청합니다.
+const BASE_URL = "";
 
 // ---------------------------------------------------------------------------
 // Base fetch wrapper
