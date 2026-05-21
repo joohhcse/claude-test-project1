@@ -4,8 +4,7 @@ import type { Order } from "@/domain/types/order";
 import type { Notification } from "@/domain/types/notification";
 import type { PaginatedResponse, UnreadCountResponse } from "@/domain/types/api";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 // ---------------------------------------------------------------------------
 // Base fetch wrapper
